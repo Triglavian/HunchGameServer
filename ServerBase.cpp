@@ -6,11 +6,15 @@ ServerBase::ServerBase(Int port)
 	this->port = port;
 	threadHandles = new std::vector<HANDLE*>();
 	lSocket = new ListenSocket(this->port);
-	newSocket = 0;
+	listenSocket = 0;
 	ZeroMemory(&clientAddr, sizeof(clientAddr));
 	cSockets = new std::vector<ClientSocket*>();
+	gameLogics = new std::list<GameLogic*>();
+	GameLogic* game = new GameLogic();
+	gameLogics->push_back(game);
 	InitializeCriticalSection(&handleSection);
 	InitializeCriticalSection(&cSocketSection);
+	InitializeCriticalSection(&gameSection);
 }
 
 ServerBase::~ServerBase()
@@ -31,9 +35,18 @@ ServerBase::~ServerBase()
 		}
 		delete cSockets;
 	}
+	if (gameLogics != nullptr) 
+	{
+		for (auto* obj : *gameLogics) 
+		{
+			delete obj;
+		}
+		delete gameLogics;
+	}
 	if (lSocket != nullptr) delete lSocket;
 	DeleteCriticalSection(&handleSection);
 	DeleteCriticalSection(&cSocketSection);
+	DeleteCriticalSection(&gameSection);
 }
 
 void ServerBase::Run()
@@ -87,7 +100,7 @@ void ServerBase::AcceptClients()
 	ZeroMemory(&clientAddr, sizeof(clientAddr));
  	while (true) 
 	{
-		newSocket = accept(lSocket->GetSocket(), (sockaddr*)&clientAddr, &addrLen);
+		listenSocket = accept(lSocket->GetSocket(), (sockaddr*)&clientAddr, &addrLen);
 		EnterCriticalSection(&handleSection);
 		threadHandles->emplace_back(&threadHandle);
 		threadHandle = (HANDLE)_beginthreadex(0, 0, ServerBase::StateSwitch, this, 0, 0);
@@ -102,18 +115,28 @@ unsigned int __stdcall ServerBase::StateSwitch(void* obj)
 {
 	ServerBase* server = static_cast<ServerBase*>(obj);
 	EnterCriticalSection(&server->cSocketSection);
-	ClientSocket* cSocket = new ClientSocket(server->newSocket, server->clientAddr);
+	EnterCriticalSection(&server->gameSection);
+	ClientSocket* cSocket = new ClientSocket(server->listenSocket, server->clientAddr);
 	server->cSockets->emplace_back(cSocket);
+	if (server->gameLogics->back()->IsMaxClients()) 
+	{
+		server->gameLogics->emplace_back(new GameLogic());
+	}
+	server->gameLogics->back()->AddClient(cSocket);
+	LeaveCriticalSection(&server->gameSection);
 	LeaveCriticalSection(&server->cSocketSection);
 	bool flag = true;
 	while (flag)
 	{
 		switch (cSocket->GetMainState()) 
 		{
-			case MAIN:
-				cSocket->ModifyStateWithProtocol();
+			case E_MAIN:
+				cSocket->SwitchState();
 				break;
-			case DISCON:
+			case E_JOIN:
+
+				break;
+			case E_DISCON:
 				flag = false;
 				break;
 		}

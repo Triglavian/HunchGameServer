@@ -1,7 +1,7 @@
 #pragma once
 #include <WinSock2.h>
+#include <WS2tcpip.h>
 #include "PacketHandler.h"
-#include "Sessions.h"
 #include "MainState.h"
 #include "ServerLogger.h"
 
@@ -17,12 +17,17 @@ public:
 	SOCKET GetSocket();
 	MainState GetMainState();
 	Protocol GetProtocol();
-	
+	PlayerData GetPlayerData();
+	PlayerData& GetPlayerDataRef();
+	ClientData GetClientData();
+	ClientData& GetClientDataRef();
+
 	//setter
 	void SetMainState(const MainState& _state);
 	void SetProtocol(const Protocol& _protocol);
+	void SetPlayerName(const std::string& name);
 	//service
-	void ModifyStateWithProtocol();
+	void SwitchState();
 	bool ValidateProtocol(const Protocol& protocol);
 
 	//packet sender
@@ -33,6 +38,7 @@ public:
 	Int SendIntPacket(const Protocol& protocol, const Int& _int) const;
 	Int SendStrPacket(const Protocol& protocol, const std::string& str) const;
 	Int SendCStrPacket(const Protocol& protocol, const Char data[], const Int& size);
+	Int SendDataPacket(const Protocol& protocol, const PlayerData data);
 
 	//packet receiver
 	Int RecvProtocolPacket();
@@ -50,5 +56,6 @@ private:
 	Int result;
 	MainState mainState;
 	Protocol protocol;
+	ClientData data;
 };
 

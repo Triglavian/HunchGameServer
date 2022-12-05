@@ -6,6 +6,7 @@
 
 #include <functional>
 #include <vector>	
+#include <list>
 
 #include "ListenSocket.h"
 #include "ClientSocket.h"
@@ -15,6 +16,7 @@
 #include "Int.h"
 #include "Float.h"
 #include "Double.h"
+#include "GameLogic.h"
 
 class ServerBase
 {
@@ -28,12 +30,14 @@ private:
 	Int port;
 	Int result;
 	ListenSocket* lSocket;
-	SOCKET newSocket;
+	SOCKET listenSocket;
 	sockaddr_in clientAddr;
 	std::vector<HANDLE*>* threadHandles;
-	std::vector<ClientSocket*>* cSockets;
+	std::vector<ClientSocket*>* cSockets;	
+	std::list<GameLogic*>* gameLogics;
 	CRITICAL_SECTION handleSection;
 	CRITICAL_SECTION cSocketSection;
+	CRITICAL_SECTION gameSection;
 
 	//base function
 	bool InitializeServer();

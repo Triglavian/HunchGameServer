@@ -88,6 +88,11 @@ int PacketHandler::SendCStrPacket(const SOCKET& socket, const Protocol& protocol
 	return send(socket, packet.buf, packet.packetSize + sizeof(int), 0);
 }
 
+int PacketHandler::SendDataPacket(const SOCKET& _socket, const Protocol& protocol, const PlayerData data)
+{
+	return SendPacket(_socket, protocol, data);
+}
+
 int PacketHandler::RecvProtocolPacket(const SOCKET& _socket, Protocol& protocol)
 {
 	ClearPacket();

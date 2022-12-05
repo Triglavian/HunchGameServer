@@ -1,5 +1,5 @@
 #include "ServerBase.h"
-
+#include <ctime>
 int main(int argc, char* argv[])
 {
 	ServerBase* server = new ServerBase();

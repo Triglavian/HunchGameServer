@@ -49,8 +49,3 @@ SOCKET ListenSocket::GetSocket()	//socket value returner
 {
 	return listenSocket;
 }
-
-ListenSocket::ListenSocket(const ListenSocket& listenSocket)
-{
-
-}

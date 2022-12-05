@@ -20,6 +20,6 @@ private:
 	Int port;
 	void BindSocket();			//bind socket to connect
 	void ListenToConnection();	//keep listening until receive any client's connection
-	ListenSocket(const ListenSocket& listenSocket);	//don't use
+	ListenSocket(const ListenSocket& listenSocket) = delete;	//don't use
 };
 

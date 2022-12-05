@@ -1,24 +1,26 @@
 #include "ClientSocket.h"
-#include <WS2tcpip.h>
 
 ClientSocket::ClientSocket(const SOCKET& _socket, const sockaddr_in& _clientAddr)
 {
 	this->_socket = _socket;
 	this->packetHandler = new PacketHandler();
-	this->mainState = MAIN;
+	this->mainState = E_MAIN;
 	this->clientAddr = _clientAddr;
 	this->protocol = P_INVALID;
 
-	std::string addr = inet_ntoa(clientAddr.sin_addr);
-	ServerLogger::PrintLog("Connected : Ip = " + addr + ", Port : " + Int(ntohs(clientAddr.sin_port)).ToString());
+	char address[INET6_ADDRSTRLEN];
+	inet_ntop(AF_INET, &clientAddr.sin_addr, address, INET_ADDRSTRLEN);
+	std::string strAddr = address;
+	ServerLogger::PrintLog("Connected : Ip = " + strAddr + ", Port : " + Int(ntohs(clientAddr.sin_port)).ToString());
 }
 
 ClientSocket::~ClientSocket()
 {
 	if (packetHandler != nullptr) delete packetHandler;
-
-	std::string addr = inet_ntoa(clientAddr.sin_addr);
-	ServerLogger::PrintLog("Disconnected : Ip = " + addr + ", Port : " + Int(ntohs(clientAddr.sin_port)).ToString());
+	char address[INET6_ADDRSTRLEN];
+	inet_ntop(AF_INET, &clientAddr.sin_addr, address, INET_ADDRSTRLEN);
+	std::string strAddr = address;
+	ServerLogger::PrintLog("Disconnected : Ip = " + strAddr + ", Port : " + Int(ntohs(clientAddr.sin_port)).ToString());
 }
 
 SOCKET ClientSocket::GetSocket()
@@ -35,6 +37,26 @@ Protocol ClientSocket::GetProtocol()
 	return protocol;
 }
 
+PlayerData ClientSocket::GetPlayerData()
+{
+	return data.data;
+}
+
+PlayerData& ClientSocket::GetPlayerDataRef()
+{
+	return data.data;
+}
+
+ClientData ClientSocket::GetClientData()
+{
+	return data;
+}
+
+ClientData& ClientSocket::GetClientDataRef()
+{
+	return data;
+}
+
 void ClientSocket::SetMainState(const MainState& _state)
 {
 	mainState = _state;
@@ -44,23 +66,30 @@ void ClientSocket::SetProtocol(const Protocol& _protocol)
 	this->protocol = _protocol;
 }
 
-void ClientSocket::ModifyStateWithProtocol()
+void ClientSocket::SetPlayerName(const std::string& name)
+{
+	data.data.userName = name;
+}
+
+void ClientSocket::SwitchState()
 {
 	if (packetHandler->RecvProtocolPacket(_socket, protocol) < 0) 
 	{
-		mainState = DISCON;
+		mainState = E_DISCON;
 		return;
 	}
 	switch (protocol)
 	{
 		//logic
-
+		case P_JOIN:
+			mainState = E_JOIN;
+			break;
 		case P_DISCON:
-			mainState = DISCON;
-			return;
+			mainState = E_DISCON;
+			break;
 		default:
 			packetHandler->SendProtocolPacket(_socket, P_INVALID);
-			mainState = MAIN;
+			mainState = E_MAIN;
 			break;
 	}
 }
@@ -104,6 +133,11 @@ Int ClientSocket::SendStrPacket(const Protocol& protocol, const std::string& str
 Int ClientSocket::SendCStrPacket(const Protocol& protocol, const Char data[], const Int& size)
 {
 	return packetHandler->SendCStrPacket(_socket, protocol, data, size);
+}
+
+Int ClientSocket::SendDataPacket(const Protocol& protocol, const PlayerData data)
+{
+	packetHandler->SendDataPacket(_socket, protocol, data);
 }
 
 Int ClientSocket::RecvProtocolPacket()
