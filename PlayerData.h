@@ -5,6 +5,7 @@
 struct PlayerData
 {
 	std::string userName = "";
-	bool isOver = false;
+	bool isTurnOver = false;
+	bool isGameOver = false;
 };
 

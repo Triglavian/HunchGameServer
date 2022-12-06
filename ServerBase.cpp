@@ -103,7 +103,7 @@ void ServerBase::AcceptClients()
 		listenSocket = accept(lSocket->GetSocket(), (sockaddr*)&clientAddr, &addrLen);
 		EnterCriticalSection(&handleSection);
 		threadHandles->emplace_back(&threadHandle);
-		threadHandle = (HANDLE)_beginthreadex(0, 0, ServerBase::StateSwitch, this, 0, 0);
+		threadHandle = (HANDLE)_beginthreadex(0, 0, StateSwitch, this, 0, 0);
 		threadHandles->erase(std::find(threadHandles->begin(), threadHandles->end(), &threadHandle));
 		LeaveCriticalSection(&handleSection);
 		CloseHandle(threadHandle);

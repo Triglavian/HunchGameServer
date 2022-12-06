@@ -38,7 +38,7 @@ public:
 	Int SendIntPacket(const Protocol& protocol, const Int& _int) const;
 	Int SendStrPacket(const Protocol& protocol, const std::string& str) const;
 	Int SendCStrPacket(const Protocol& protocol, const Char data[], const Int& size);
-	Int SendDataPacket(const Protocol& protocol, const PlayerData data);
+	Int SendDataPacket(const Protocol& protocol, const PlayerData& data);
 
 	//packet receiver
 	Int RecvProtocolPacket();

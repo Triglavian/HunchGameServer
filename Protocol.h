@@ -11,6 +11,8 @@ enum class Protocol
 	WAIT,
 	START,
 	TURN,
+	ENDTURN,
+	GAMEOVER,
 
 #define P_DISCON	Protocol::DISCONNECTION
 #define P_INVALID	Protocol::INVALIDPROT
@@ -21,4 +23,6 @@ enum class Protocol
 #define P_WAIT_		Protocol::WAIT
 #define P_START		Protocol::START
 #define P_TURN		Protocol::TURN
+#define P_ENDTURN	Protocol::ENDTURN
+#define P_GAMEOVER	Protocol::GAMEOVER
 };

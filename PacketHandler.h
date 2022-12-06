@@ -21,7 +21,7 @@ public:
 	int SendIntPacket(const SOCKET& _socket, const Protocol& protocol, const int& data);
 	int SendStrPacket(const SOCKET& _socket, const Protocol& protocol, const std::string& data);
 	int SendCStrPacket(const SOCKET& socket, const Protocol& protocol, const Char data[], const Int& size);
-	int SendDataPacket(const SOCKET& _socket, const Protocol& protocol, const PlayerData data);
+	int SendDataPacket(const SOCKET& _socket, const Protocol& protocol, const PlayerData& data);
 	//receive packet
 	int RecvProtocolPacket(const SOCKET& _socket, Protocol& protocol);
 	int RecvBoolPacket(const SOCKET& _socket, Protocol& protocol, bool& data);

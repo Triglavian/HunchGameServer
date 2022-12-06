@@ -135,9 +135,9 @@ Int ClientSocket::SendCStrPacket(const Protocol& protocol, const Char data[], co
 	return packetHandler->SendCStrPacket(_socket, protocol, data, size);
 }
 
-Int ClientSocket::SendDataPacket(const Protocol& protocol, const PlayerData data)
+Int ClientSocket::SendDataPacket(const Protocol& protocol, const PlayerData& data)
 {
-	packetHandler->SendDataPacket(_socket, protocol, data);
+	return packetHandler->SendDataPacket(_socket, protocol, data);
 }
 
 Int ClientSocket::RecvProtocolPacket()

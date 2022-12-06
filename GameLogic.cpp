@@ -1,14 +1,17 @@
 #include "GameLogic.h"
 
+bool GameLogic::gameFlag = false;
+
 GameLogic::GameLogic(int maxClients)
 {
 	this->maxClients = maxClients;
 	threads = new std::list<HANDLE>();
-	events.emplace_back(CreateEvent(0, 0, 0, 0));	//join evnet
-	events.emplace_back(CreateEvent(0, 0, 0, 0));	//start event
-	events.emplace_back(CreateEvent(0, 0, 0, 0));	//recv stream
+	events[EV_JOIN] = CreateEvent(0, 0, 0, 0);	//join evnet
+	events[EV_START] = CreateEvent(0, 0, 0, 0);	//start event
+	events[EV_INPUT] = CreateEvent(0, 0, 0, 0);	//recv stream
+	events[EV_MYIN] = CreateEvent(0, 0, 0, 0);	//myinput stream
+	events[EV_OTHERIN] = CreateEvent(0, 0, 0, 0);	//otherinput stream
 	currentCount = 0;
-	interval = 5;
 }
 
 GameLogic::~GameLogic()
@@ -36,7 +39,7 @@ void GameLogic::AddClient(ClientSocket* client)
 	this->client = client;
 	for (auto client : *clients) 
 	{
-		IsMaxClients() ? SetEvent(events[1]) : SetEvent(events[0]);
+		IsMaxClients() ? SetEvent(events[EV_START]) : SetEvent(events[EV_JOIN]);
 	}
 }
 
@@ -71,9 +74,9 @@ void GameLogic::WaitForOtherPlayers(ClientSocket* currentClient)
 	currentClient->SendProtocolPacket(P_WAIT_);
 	while (!IsMaxClients())
 	{
-		WaitForSingleObject(events[0], INFINITE);
+		WaitForSingleObject(events[EV_JOIN], INFINITE);
 	}
-	WaitForSingleObject(events[1], INFINITE);
+	WaitForSingleObject(events[EV_START], INFINITE);
 	currentClient->SendProtocolPacket(P_START);
 }
 
@@ -94,7 +97,99 @@ bool GameLogic::GetPlayerName(ClientSocket* currentClient)
 
 bool GameLogic::BeginGame(ClientSocket* currentClient)
 {
-	
+	HANDLE input = (HANDLE)_beginthreadex(0, 0, ListenToInput, this, 0, 0);
+	bool flag = true;
+	while (flag)
+	{
+		//WaitForMultipleObjects(3, events, false, INFINITE);
+		WaitForSingleObject(events[EV_INPUT], INFINITE);
+		switch (currentClient->GetClientData().state) 
+		{
+			case E_IDLE:
+				break;
+			case E_MYIN:
+				WaitForSingleObject(events[EV_MYIN], INFINITE);
+				if (!ValidateClientInput(currentClient)) 
+				{
+					break;
+				}
+				UpFlag(currentClient);
+				SetOtherClientEvent(currentClient);
+				break;
+			//case E_OTHERIN:
+
+			//	break;
+			case E_RESULT:
+				//WaitForSingleObject(events[EV_OTHERIN], INFINITE);
+				SendResult(currentClient);
+				if (IsGameOver()) 
+				{
+					currentClient->GetClientDataRef().state = E_QUIT;
+				}
+				break;
+			case E_QUIT:
+				if (Disconnect(currentClient)) 
+				{
+					flag = false;
+				}
+				break;
+		}
+	}
+	CloseHandle(input);
+	return true;
+}
+
+bool GameLogic::ValidateClientInput(ClientSocket* currentClient)
+{
+	if (IsAlreadyOver(currentClient))
+	{
+		ResetState(currentClient);
+		return false;
+	}
+	return true;
+}
+
+void GameLogic::ResetState(ClientSocket* currentClient)
+{
+	currentClient->GetClientDataRef().state = E_IDLE;
+}
+
+bool GameLogic::IsAlreadyOver(ClientSocket* currentClient)
+{
+	return currentClient->GetClientData().data.isTurnOver;
+}
+
+void GameLogic::UpFlag(ClientSocket* currentClient)
+{
+	currentClient->GetClientDataRef().data.isTurnOver = true;
+	currentClient->GetClientDataRef().state = E_RESULT;
+}
+
+void GameLogic::SetOtherClientEvent(ClientSocket* currentClient)
+{
+	for (auto client : *clients)
+	{
+		if (client == currentClient) continue;
+		client->GetClientDataRef().state = E_RESULT;
+		SetEvent(events[EV_INPUT]);
+		//SetEvent(events[EV_OTHERIN]);
+	}
+}
+
+bool GameLogic::IsGameOver()
+{
+	GameLogic::gameFlag;
+}
+
+void GameLogic::SendResult(ClientSocket* currentClient)
+{
+	Protocol protocol = IsGameOver() ? P_GAMEOVER : P_ENDTURN;
+	currentClient->SendDataPacket(protocol, currentClient->GetPlayerData());
+}
+
+bool GameLogic::Disconnect(ClientSocket* currentClient)
+{
+	return currentClient->RecvProtocolPacket() == SOCKET_ERROR;
 }
 
 unsigned int __stdcall GameLogic::ListenToInput(void* _this)
@@ -118,15 +213,30 @@ unsigned int __stdcall GameLogic::ListenToInput(void* _this)
 			std::cout << "invalid protocol exit" << std::endl;
 			break;
 		}
-		logic->client->GetPlayerDataRef().isOver = true;
+		logic->client->GetPlayerDataRef().isTurnOver = true;
 		logic->client->GetClientDataRef().state = E_MYIN;
+		time(&logic->client->GetClientDataRef().inputTime);
+		for (auto client : *logic->clients)
+		{
+			if (client == logic->client) continue;
+			if (abs(client->GetClientData().inputTime - logic->client->GetClientData().inputTime) < 10) 
+			{
+				client->GetPlayerDataRef().isGameOver = logic->client->GetPlayerDataRef().isGameOver = true;
+				logic->gameFlag = true;
+			}
+		}
 		for (auto client : *logic->clients) 
 		{
 			if (logic->client != client) 
 			{
-				client->GetClientDataRef().state = E_OTHERIN;
+				client->GetClientDataRef().state = E_IDLE;
 			}
 		}
-		SetEvent(logic->events[2]);
+		for (auto client : *logic->clients) 
+		{
+			SetEvent(logic->events[EV_INPUT]);
+		}
+		SetEvent(logic->events[EV_MYIN]);
 	}
+	return 0;
 }
