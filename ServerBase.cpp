@@ -134,7 +134,14 @@ unsigned int __stdcall ServerBase::StateSwitch(void* obj)
 				cSocket->SwitchState();
 				break;
 			case E_JOIN:
-
+				EnterCriticalSection(&server->gameSection);
+				if (!server->gameLogics->back()->JoinGame(cSocket))
+				{
+					flag = false;
+					LeaveCriticalSection(&server->gameSection);
+				}
+				LeaveCriticalSection(&server->gameSection);
+				server->gameLogics->back()->WaitForOtherPlayers(cSocket);
 				break;
 			case E_DISCON:
 				flag = false;

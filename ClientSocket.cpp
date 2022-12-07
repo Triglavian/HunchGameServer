@@ -12,6 +12,7 @@ ClientSocket::ClientSocket(const SOCKET& _socket, const sockaddr_in& _clientAddr
 	inet_ntop(AF_INET, &clientAddr.sin_addr, address, INET_ADDRSTRLEN);
 	std::string strAddr = address;
 	ServerLogger::PrintLog("Connected : Ip = " + strAddr + ", Port : " + Int(ntohs(clientAddr.sin_port)).ToString());
+	//data = new ClientData();
 }
 
 ClientSocket::~ClientSocket()
@@ -19,6 +20,7 @@ ClientSocket::~ClientSocket()
 	if (packetHandler != nullptr) delete packetHandler;
 	char address[INET6_ADDRSTRLEN];
 	inet_ntop(AF_INET, &clientAddr.sin_addr, address, INET_ADDRSTRLEN);
+	//if (data != nullptr) delete data;
 	std::string strAddr = address;
 	ServerLogger::PrintLog("Disconnected : Ip = " + strAddr + ", Port : " + Int(ntohs(clientAddr.sin_port)).ToString());
 }
