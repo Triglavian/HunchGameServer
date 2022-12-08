@@ -37,20 +37,23 @@ private:
 	int maxClients;
 	std::list<ClientSocket*>* clients = nullptr;
 	std::list<HANDLE>* threads;
-	HANDLE events[2];	
+	HANDLE events[2];
+	CRITICAL_SECTION cs;
 	//CRITICAL_SECTION inputSection;
 	ClientSocket* client;
+	int delay = 20;
 	static bool gameFlag;
 
 	//myinput
-	void SendCurrentPlayerList(ClientSocket* currentClient);
+	void SendPlayerList(ClientSocket* currentClient);
 	bool GetPlayerName(ClientSocket* currentClient);
 	bool BeginGame(ClientSocket* currentClient);
 	bool ValidateClientInput(ClientSocket* currentClient);
 	void ResetState(ClientSocket* currentClient);
 	bool IsAlreadyOver(ClientSocket* currentClient);
 	void UpFlag(ClientSocket* currentClient);
-	void SetOtherClientEvent(ClientSocket* currentClient);
+	void UpdateClientDatas(ClientSocket* currentClient);
+	void SetAllClientEvent(ClientSocket* currentClient);
 
 	//result
 	bool IsGameOver();
